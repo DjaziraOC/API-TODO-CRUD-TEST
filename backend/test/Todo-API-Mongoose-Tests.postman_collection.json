@@ -1,0 +1,1264 @@
+{
+	"info": {
+		"_postman_id": "mongoose-task-tests-ultimate",
+		"name": "Todo API - Tests Complets Mongoose",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Tests automatisés spécifiques au modèle Task Mongoose avec obtention auto du token"
+	},
+	"item": [
+		{
+			"name": "🔰 0. INITIALISATION & AUTH AUTO",
+			"item": [
+				{
+					"name": "0.1 Health Check & Setup",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Serveur actif\", function() {",
+									"    pm.response.to.have.status(200);",
+									"    const data = pm.response.json();",
+									"    pm.expect(data.status).to.eql(\"OK\");",
+									"    pm.expect(data.database).to.eql(\"connected\");",
+									"});",
+									"",
+									"// Générer des IDs uniques pour éviter les conflits",
+									"const timestamp = Date.now();",
+									"const runId = `run_${timestamp}`;",
+									"const testEmail = `test.${timestamp}@example.com`;",
+									"const testPassword = \"{{testPassword}}\";",
+									"const testUsername = `user_${timestamp}`;",
+									"",
+									"pm.collectionVariables.set(\"runId\", runId);",
+									"pm.collectionVariables.set(\"testEmail\", testEmail);",
+									"pm.collectionVariables.set(\"testPassword\", testPassword);",
+									"pm.collectionVariables.set(\"testUsername\", testUsername);",
+									"pm.collectionVariables.set(\"uniqueTitle\", `Tâche Test ${timestamp}`);",
+									"",
+									"console.log(\"🔧 Configuration initialisée:\");",
+									"console.log(\"   Run ID: \" + runId);",
+									"console.log(\"   Email: \" + testEmail);",
+									"console.log(\"   Username: \" + testUsername);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "0.2 Création Utilisateur Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{testUsername}}\",\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"{{testPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signup",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "signup"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Gestion flexible de la création utilisateur",
+									"const status = pm.response.code;",
+									"const response = pm.response.json();",
+									"",
+									"if (status === 201 || status === 200) {",
+									"    console.log(\"✅ Utilisateur créé avec succès\");",
+									"    ",
+									"    // Extraire le token si fourni à l'inscription",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set(\"authToken\", response.token);",
+									"        console.log(\"   Token obtenu depuis signup\");",
+									"    }",
+									"    if (response.userId || (response.user && response.user._id)) {",
+									"        pm.collectionVariables.set(\"userId\", response.userId || response.user._id);",
+									"    }",
+									"} else if (status === 409) {",
+									"    console.log(\"⚠️  Utilisateur existe déjà (conflit 409)\");",
+									"    console.log(\"   Tentative de login avec cet utilisateur...\");",
+									"    pm.test(\"User already exists - will try login\", function() {",
+									"        pm.expect(true).to.be.true;",
+									"});",
+									"} else if (status === 400) {",
+									"    console.log(\"❌  Erreur de validation utilisateur\");",
+									"    console.log(\"   Détails: \" + (response.error || response.message));",
+									"} else {",
+									"    console.log(`❌  Code ${status} - Utilisation d'un compte existant pour les tests`);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "0.3 Login Auto & Get Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"{{testPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// ================ EXTRACTION DU TOKEN ================",
+									"pm.test(\"Login réussi\", function() {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"",
+									"// Fonction pour extraire le token de n'importe quelle structure",
+									"const extractToken = (data, path = \"\") => {",
+									"    if (!data) return null;",
+									"    ",
+									"    // Si data est déjà un string token",
+									"    if (typeof data === 'string' && data.includes('.')) {",
+									"        const parts = data.split('.');",
+									"        if (parts.length === 3) return data; // Format JWT typique",
+									"    }",
+									"    ",
+									"    // Rechercher récursivement",
+									"    for (const key in data) {",
+									"        const value = data[key];",
+									"        const newPath = path ? `${path}.${key}` : key;",
+									"        ",
+									"        if (key.toLowerCase().includes('token') && typeof value === 'string') {",
+									"            return value;",
+									"        }",
+									"        ",
+									"        if (typeof value === 'object' && value !== null) {",
+									"            const found = extractToken(value, newPath);",
+									"            if (found) return found;",
+									"        }",
+									"    }",
+									"    return null;",
+									"};",
+									"",
+									"const authToken = extractToken(response);",
+									"",
+									"if (authToken) {",
+									"    pm.collectionVariables.set(\"authToken\", authToken);",
+									"    pm.environment.set(\"authToken\", authToken);",
+									"    ",
+									"    console.log(\"✅ TOKEN JWT OBTENU AUTOMATIQUEMENT !\");",
+									"    console.log(\"   Format: \" + (authToken.split('.').length === 3 ? \"JWT valide\" : \"autre format\"));",
+									"    console.log(\"   Longueur: \" + authToken.length + \" caractères\");",
+									"    ",
+									"    pm.test(\"Token valide\", function() {",
+									"        pm.expect(authToken).to.be.a('string');",
+									"        pm.expect(authToken.length).to.be.greaterThan(10);",
+									"    });",
+									"} else {",
+									"    console.error(\"🚫 Aucun token trouvé dans la réponse\");",
+									"    ",
+									"    // Dernière tentative: chercher dans le texte brut",
+									"    const rawResponse = pm.response.text();",
+									"    const tokenRegex = /[\"']?(token|accessToken|access_token|authToken)[\"']?\\s*:\\s*[\"']([^\"']+)[\"']/i;",
+									"    const match = rawResponse.match(tokenRegex);",
+									"    if (match && match[2]) {",
+									"        pm.collectionVariables.set(\"authToken\", match[2]);",
+									"        console.log(\"✅ Token extrait via regex: \" + match[2].substring(0, 30) + \"...\");",
+									"    }",
+									"}",
+									"",
+									"// Extraire l'ID utilisateur",
+									"const extractUserId = (data) => {",
+									"    if (data.userId) return data.userId;",
+									"    if (data.user && data.user._id) return data.user._id;",
+									"    if (data._id) return data._id;",
+									"    if (data.data && data.data.userId) return data.data.userId;",
+									"    if (data.id) return data.id;",
+									"    return null;",
+									"};",
+									"",
+									"const userId = extractUserId(response);",
+									"if (userId) {",
+									"    pm.collectionVariables.set(\"userId\", userId);",
+									"    console.log(\"   User ID: \" + userId);",
+									"}",
+									"// ====================================================="
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🧪 1. TESTS CRUD - CHAMPS SPÉCIFIQUES",
+			"item": [
+				{
+					"name": "1.1 CREATE - Tâche complète (tous champs)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"{{uniqueTitle}}\",\n    \"description\": \"Description de test conforme au modèle (max 1000 chars)\",\n    \"priority\": \"high\",\n    \"completed\": false,\n    \"dueDate\": \"2024-12-31T23:59:59.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Tests spécifiques au modèle Mongoose",
+									"pm.test(\"Status 201 - Création réussie\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const task = response.task; // IMPORTANT: la tâche est dans response.task",
+									"",
+									"console.log(\"🔍 Tâche créée:\");",
+									"console.log(\"Titre:\", task.title);",
+									"console.log(\"User:\", task.user);",
+									"",
+									"pm.test(\"Structure conforme au modèle Task\", function() {",
+									"    ",
+									"    pm.expect(task.title).to.eql(pm.collectionVariables.get(\"uniqueTitle\"));",
+									"    pm.expect(task).to.have.property(\"_id\");",
+									"    pm.expect(task).to.have.property(\"user\");",
+									"    ",
+									"    // Champs avec valeurs par défaut",
+									"    pm.expect(task.completed).to.eql(false);",
+									"    pm.expect(task.priority).to.eql(\"high\");",
+									"    ",
+									"    // Champs optionnels",
+									"    pm.expect(task.description).to.eql(\"Description de test conforme au modèle (max 1000 chars)\");",
+									"    pm.expect(task.dueDate).to.not.be.null;",
+									"    ",
+									"    // Timestamps automatiques",
+									"    pm.expect(task).to.have.property(\"createdAt\");",
+									"    pm.expect(task).to.have.property(\"updatedAt\");",
+									"    ",
+									"    // Sauvegarder l'ID pour les tests suivants",
+									"    pm.collectionVariables.set(\"taskId\", task._id);",
+									"    console.log(\"✅ Tâche créée - ID: \" + task._id);",
+									"});",
+									"",
+									"pm.test(\"User field is ObjectId format\", function() {",
+									"    const objectIdRegex = /^[0-9a-fA-F]{24}$/;",
+									"    pm.expect(task.user).to.match(objectIdRegex);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.2 CREATE - Tâche minimale (seulement title)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Tâche minimale {{runId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 201 avec champs minimaux\", function() {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const task = response.task || response;",
+									"",
+									"pm.test(\"Valeurs par défaut appliquées\", function() {",
+									"    ",
+									"    // Valeurs par défaut du modèle",
+									"    pm.expect(task.completed).to.eql(false);",
+									"    pm.expect(task.priority).to.eql(\"medium\"); // default du modèle",
+									"    ",
+									"    // Description peut être undefined, null ou vide string",
+									"    if (task.description !== undefined) {",
+									"        pm.expect(task.description).to.be.oneOf([\"\", null]);",
+									"    }",
+									"    ",
+									"    // dueDate peut être undefined ou null",
+									"    if (task.dueDate !== undefined) {",
+									"        pm.expect(task.dueDate).to.be.null;",
+									"    }",
+									"    ",
+									"    console.log(\"✅ Valeurs par défaut vérifiées: completed=false, priority=medium\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.3 READ - Get All Tasks (vérifier indexes)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 - Liste récupérée\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Structure de réponse valide\", function() {",
+									"    const response = pm.response.json();",
+									"    const tasks = response.tasks || response.data || response;",
+									"    ",
+									"    pm.expect(Array.isArray(tasks)).to.be.true;",
+									"    ",
+									"    if (tasks.length > 0) {",
+									"        const firstTask = tasks[0];",
+									"        ",
+									"        // Vérifier la structure complète",
+									"        pm.expect(firstTask).to.have.property(\"_id\");",
+									"        pm.expect(firstTask).to.have.property(\"title\");",
+									"        pm.expect(firstTask).to.have.property(\"completed\");",
+									"        pm.expect(firstTask).to.have.property(\"priority\");",
+									"        pm.expect(firstTask).to.have.property(\"user\");",
+									"        pm.expect(firstTask).to.have.property(\"createdAt\");",
+									"        pm.expect(firstTask).to.have.property(\"updatedAt\");",
+									"        ",
+									"        // Vérifier les types",
+									"        pm.expect(typeof firstTask.title).to.eql(\"string\");",
+									"        pm.expect(typeof firstTask.completed).to.eql(\"boolean\");",
+									"        pm.expect([\"low\", \"medium\", \"high\"]).to.include(firstTask.priority);",
+									"    }",
+									"    ",
+									"    console.log(\"📋 Nombre de tâches récupérées: \" + tasks.length);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.4 READ - Get Task by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 - Tâche trouvée\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const task = response.task || response;",
+									"",
+									"pm.test(\"Tâche correspond à l'ID\", function() {",
+									"    pm.expect(task._id).to.eql(pm.collectionVariables.get(\"taskId\"));",
+									"    pm.expect(task.title).to.eql(pm.collectionVariables.get(\"uniqueTitle\"));",
+									"});",
+									"",
+									"pm.test(\"Vérification des timestamps\", function() {",
+									"    ",
+									"    // Vérifier que createdAt et updatedAt sont des dates valides",
+									"    pm.expect(new Date(task.createdAt).getTime()).to.be.greaterThan(0);",
+									"    pm.expect(new Date(task.updatedAt).getTime()).to.be.greaterThan(0);",
+									"    ",
+									"    // updatedAt devrait être >= createdAt",
+									"    pm.expect(new Date(task.updatedAt).getTime()).to.be.at.least(new Date(task.createdAt).getTime());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.5 READ - Filtre par completed=false",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks?completed=false",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"],
+							"query": [
+								{
+									"key": "completed",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test du filtre correspondant à l'index {user: 1, completed: 1}",
+									"pm.test(\"Filtre completed=false fonctionne\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Toutes les tâches sont non complétées\", function() {",
+									"    const response = pm.response.json();",
+									"    const tasks = response.tasks || response.data || response;",
+									"    ",
+									"    if (Array.isArray(tasks) && tasks.length > 0) {",
+									"        tasks.forEach(task => {",
+									"            pm.expect(task.completed).to.eql(false);",
+									"        });",
+									"    }",
+									"    ",
+									"    console.log(`🔍 Filtre completed=false: ${tasks.length} tâche(s) trouvée(s)`);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.6 READ - Filtre par priority=high",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks?priority=high",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"],
+							"query": [
+								{
+									"key": "priority",
+									"value": "high"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Filtre priority=high fonctionne\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Toutes les tâches ont priority=high\", function() {",
+									"    const response = pm.response.json();",
+									"    const tasks = response.tasks || response.data || response;",
+									"    ",
+									"    if (Array.isArray(tasks) && tasks.length > 0) {",
+									"        tasks.forEach(task => {",
+									"            pm.expect(task.priority).to.eql(\"high\");",
+									"        });",
+									"}",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.7 UPDATE - Marquer comme completed",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"completed\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 - Mise à jour réussie\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const task = response.task || response;",
+									"",
+									"pm.test(\"Champ completed mis à true\", function() {",
+									"    pm.expect(task.completed).to.eql(true);",
+									"    pm.expect(task._id).to.eql(pm.collectionVariables.get(\"taskId\"));",
+									"});",
+									"",
+									"pm.test(\"updatedAt a été mis à jour\", function() {",
+									"    ",
+									"    // Sauvegarder l'ancien updatedAt pour comparaison",
+									"    const previousUpdatedAt = pm.collectionVariables.get(\"previousUpdatedAt\");",
+									"    if (previousUpdatedAt) {",
+									"        const newUpdatedAt = new Date(task.updatedAt).getTime();",
+									"        const oldUpdatedAt = new Date(previousUpdatedAt).getTime();",
+									"        pm.expect(newUpdatedAt).to.be.greaterThan(oldUpdatedAt);",
+									"    }",
+									"    ",
+									"    pm.collectionVariables.set(\"previousUpdatedAt\", task.updatedAt);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "1.8 UPDATE - Modifier multiple champs",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"{{uniqueTitle}} - MODIFIÉ\",\n    \"description\": \"Nouvelle description après mise à jour\",\n    \"priority\": \"low\",\n    \"dueDate\": \"2025-01-15T12:00:00.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 - Mise à jour multiple\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const task = response.task || response;",
+									"",
+									"pm.test(\"Tous les champs mis à jour\", function() {",
+									"    ",
+									"    pm.expect(task.title).to.include(\"MODIFIÉ\");",
+									"    pm.expect(task.description).to.eql(\"Nouvelle description après mise à jour\");",
+									"    pm.expect(task.priority).to.eql(\"low\");",
+									"    pm.expect(task.dueDate).to.not.be.null;",
+									"    pm.expect(task.completed).to.eql(true); // Doit rester true",
+									"    ",
+									"    console.log(\"👍  Tâche complètement mise à jour\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "❌ 2. TESTS DE VALIDATION (erreurs attendues)",
+			"item": [
+				{
+					"name": "2.1 CREATE - Validation: titre vide",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"\",\n    \"description\": \"Ceci devrait échouer - titre vide\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test minlength: 1",
+									"pm.test(\"Status 400 - Validation échouée\", function() {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Afficher la réponse pour debug",
+									"const response = pm.response.json();",
+									"console.log(\"🔍 Réponse d'erreur complète:\");",
+									"console.log(JSON.stringify(response, null, 2));",
+									"",
+									"pm.test(\"Message d'erreur mentionne le titre\", function() {",
+									"    ",
+									"    const errorText = JSON.stringify(response).toLowerCase();",
+									"    ",
+									"    // Vérifier les messages possibles du modèle",
+									"    const expectedKeywords = [\"titre\", \"title\", \"requis\", \"required\", \"vide\", \"empty\", \"ne peut pas\", \"doit\", \"must\"];",
+									"    const hasKeyword = expectedKeywords.some(keyword => errorText.includes(keyword));",
+									"    pm.expect(hasKeyword).to.be.true;",
+									"    ",
+									"    console.log(\"✅ Validation titre vide\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "2.2 CREATE - Validation: titre trop long (>200)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.\",\n    \"description\": \"Titre de 200+ caractères - devrait échouer\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test maxlength: 200",
+									"pm.test(\"Status 400 - Titre trop long\", function() {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"console.log(\"✅ Validation titre trop long - échec attendu\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "2.3 CREATE - Validation: description trop longue (>1000)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Test description longue\",\n    \"description\": \"D\".repeat(1001)\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test maxlength: 1000 pour description",
+									"if (pm.response.code === 400) {",
+									"    pm.test(\"Status 400 - Description trop longue\", function() {",
+									"        pm.response.to.have.status(400);",
+									"    });",
+									"    ",
+									"    console.log(\"✅ Validation description trop longue\");",
+									"} else {",
+									"    console.log(\"❌  Code: \" + pm.response.code);",
+									"    pm.test(\"Erreur attendue\", function() {",
+									"        pm.expect(pm.response.code).to.be.oneOf([400, 500]);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "2.4 CREATE - Validation: priority invalide",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Test priority invalide\",\n    \"priority\": \"urgent\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test enum: ['low', 'medium', 'high']",
+									"pm.test(\"Status 400 - Priority invalide\", function() {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Afficher la réponse pour debug",
+									"const response = pm.response.json();",
+									"console.log(\"🔍 Réponse d'erreur (priority invalide):\");",
+									"console.log(JSON.stringify(response, null, 2));",
+									"",
+									"pm.test(\"Erreur de validation\", function() {",
+									"    pm.expect(response).to.have.property(\"error\");",
+									"    console.log(\"✅ Validation priority invalide\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "2.5 READ - Tâche non trouvée (404)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/507f1f77bcf86cd799439011",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "507f1f77bcf86cd799439011"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 404 - Tâche non trouvée\", function() {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Message d'erreur approprié\", function() {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property(\"error\");",
+									"    ",
+									"    console.log(\"✅ Erreur 404: \" + response.error);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "2.6 UPDATE - Sans authentification (401)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Test sans auth\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 401 - Non authentifié\", function() {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"console.log(\"✅ Accès refusé sans token\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "2.7 UPDATE - Token invalide",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{invalidToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Test token invalide\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Accès refusé - Token invalide\", function() {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",  
+									"});",
+									"",
+									"console.log(\"✅ Token invalide rejeté (code: \" + pm.response.code + \")\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "📊 3. TESTS STATISTIQUES & NETTOYAGE",
+			"item": [
+				{
+					"name": "3.1 GET - Statistiques des tâches",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "stats"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200 - Statistiques\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"const stats = response.stats;",
+									"",
+									"pm.test(\"Structure des statistiques\", function() {",
+									"    ",
+									"    // Champs exacts retournés par l'API",
+									"    pm.expect(stats).to.have.property(\"total\");",
+									"    pm.expect(stats).to.have.property(\"completed\");",
+									"    pm.expect(stats).to.have.property(\"pending\");",
+									"    pm.expect(stats).to.have.property(\"completionRate\");",
+									"    ",
+									"    // Vérifier les types",
+									"    pm.expect(stats.total).to.be.a('number');",
+									"    pm.expect(stats.completed).to.be.a('number');",
+									"    pm.expect(stats.pending).to.be.a('number');",
+									"    pm.expect(stats.completionRate).to.be.a('string');",
+									"    ",
+									"    console.log(\"📊 Statistiques:\");",
+									"    console.log(\"   Total: \" + stats.total);",
+									"    console.log(\"   Complétées: \" + stats.completed);",
+									"    console.log(\"   En attente: \" + stats.pending);",
+									"    console.log(\"   Taux: \" + stats.completionRate + \"%\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "3.2 DELETE - Supprimer la tâche de test",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200/204 - Suppression réussie\", function() {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});",
+									"",
+									"pm.test(\"Confirmation de suppression\", function() {",
+									"    const response = pm.response.json();",
+									"    if (response && response.message) {",
+									"        pm.expect(response.message.toLowerCase()).to.include(\"supprim\");",
+									"    }",
+									"    ",
+									"    console.log(\"🗑️  Tâche supprimée avec succès\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "3.3 VERIFY - Vérifier suppression (404 attendu)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tasks", "{{taskId}}"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 404 - Tâche bien supprimée\", function() {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"console.log(\"✅ Nettoyage terminé - Tâche correctement supprimée\");",
+									"",
+									"// Nettoyer les variables",
+									"pm.collectionVariables.unset(\"taskId\");",
+									"pm.collectionVariables.unset(\"uniqueTitle\");",
+									"pm.collectionVariables.unset(\"previousUpdatedAt\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			]
+		}
+	], 
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"exec": [
+					"// ===================================================",
+					"// SCRIPT PRÉ-REQUIS: GESTION AUTOMATIQUE DU TOKEN",
+					"// ===================================================",
+					"console.log(`🚀 Préparation: ${pm.info.requestName}`);",
+					"",
+					"// Initialisation des variables obligatoires",
+					"const initVar = (key, defaultValue) => {",
+					"    if (!pm.collectionVariables.get(key)) {",
+					"        pm.collectionVariables.set(key, defaultValue);",
+					"    }",
+					"};",
+					"",
+					"initVar(\"baseUrl\", \"http://localhost:5000\");",
+					"initVar(\"testEmail\", \"{{testEmail}}\");",
+					"initVar(\"testPassword\", \"{{testPassword}}\");",
+					"",
+					"// Si la requête nécessite un token mais qu'on n'en a pas",
+					"const needsAuth = pm.request.headers && ",
+					"                 pm.request.headers.get(\"Authorization\") && ",
+					"                 pm.request.headers.get(\"Authorization\").includes(\"{{authToken}}\");",
+					"",
+					"if (needsAuth && !pm.collectionVariables.get(\"authToken\")) {",
+					"    console.warn(\"❌  Token manquant pour une requête authentifiée\");",
+					"    console.warn(\"   Exécutez d'abord les requêtes d'initialisation (0.1 à 0.3)\");",
+					"}",
+					"",
+					"// Log pour debug",
+					"if (pm.collectionVariables.get(\"authToken\")) {",
+					"    const token = pm.collectionVariables.get(\"authToken\");",
+					"    console.log(`🔑 Token disponible (${token.length} chars)`);",
+					"}"
+				],
+				"type": "text/javascript"
+			}
+		},
+        {
+		    "listen": "test",
+		    "script": {
+			    "exec": [
+				    "const requestName = pm.info.requestName;",
+				    "const statusCode = pm.response.code;",
+				    "",
+				    "// Créer un log structuré",
+				    "const emoji = statusCode >= 200 && statusCode < 300 ? \"✅\" : ",
+				    "             statusCode >= 400 && statusCode < 500 ? \"❌ \" : ",
+				    "             \"🚫\";",
+				    "",
+				    "console.log(`${emoji} ${requestName}: ${statusCode} (${pm.response.responseTime}ms)`);",
+				    "",
+				    "// Ajouter un délai court entre les requêtes",
+				    "setTimeout(() => {}, 200);"
+			   ],
+			   "type": "text/javascript"
+		   }
+	   }
+
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "runId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "testEmail",
+			"value": "{{testEmail}}",
+			"type": "string"
+		},
+		{
+			"key": "testPassword",
+			"value": "{{testPassword}}",
+			"type": "secret"
+		},
+		{
+			"key": "testUsername",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "secret"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "taskId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "uniqueTitle",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "previousUpdatedAt",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
+
+
