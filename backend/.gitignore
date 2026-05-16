@@ -1,0 +1,152 @@
+# ============================================
+# ENVIRONMENT & SECRETS
+# ============================================
+.env*
+.env
+# Fichier d'environnement principal (contient secrets)
+.env.local
+# Variables locales spécifiques à la machine
+.env.development
+# Configuration développement
+.env.production
+# Configuration production
+.env.test
+# Configuration tests
+.env.*.local
+# Tous les fichiers .env avec suffixe .local
+*.env
+# Tout fichier se terminant par .env
+!.env.example
+# Exception : on garde .env.example
+secrets/
+# Dossier contenant des secrets/certificats
+keys/
+# Dossier contenant des clés cryptographiques
+
+# ============================================
+# NODE.JS
+# ============================================
+node_modules
+# Dossier des dépendances Node.js - NE JAMAIS VERSIONNER
+npm-debug.log*
+# Logs de débogage npm
+yarn-debug.log*
+# Logs de débogage yarn
+yarn-error.log*
+# Logs d'erreur yarn
+.pnpm-debug.log*
+# Logs de débogage pnpm
+package-lock.json
+# Lock file npm (optionnel selon la stratégie)
+yarn.lock
+# Lock file yarn (optionnel selon la stratégie)
+
+# Runtime data
+pids
+# Fichiers PID de processus
+*.pid
+# Identifiants de processus
+*.seed
+# Fichiers seed aléatoires
+*.pid.lock
+# Lock files de processus
+
+# Coverage directory used by tools like istanbul
+coverage/
+# Rapports de couverture de code
+.nyc_output/
+# Sortie de nyc (istanbul)
+
+# ============================================
+# IDE & EDITOR
+# ============================================
+.vscode/
+# Configuration VS Code (préférences utilisateur)
+.idea/
+# Configuration JetBrains IDE (IntelliJ, WebStorm)
+*.swp
+# Fichiers swap Vim
+*.swo
+# Fichiers swap Vim
+*~
+# Fichiers de sauvegarde Emacs
+.DS_Store
+# Métadonnées macOS
+Thumbs.db
+# Cache des vignettes Windows
+
+# ============================================
+# DOCKER
+# ============================================
+docker-compose.override.yml
+docker-data/
+*.dockerignore
+
+# ============================================
+# LOGS
+# ============================================
+logs/
+# Logs applicatifs
+*.log
+# Tous les fichiers de log
+
+# ============================================
+# TEST
+# ============================================
+test/auth_token.txt
+
+# Rapports générés (HTML, JSON, XML)
+test/mongoose-test-reports/
+test/*_report_*.html
+test/*_report_*.json
+test/*_report_*.xml
+
+# README généré automatiquement
+README-TESTS-POSTMAN.md
+
+# ============================================
+# OS & TEMPORARY FILES
+# ============================================
+# macOS
+.DS_Store
+# Métadonnées des dossiers macOS
+.AppleDouble
+# Fichiers ressources macOS
+.LSOverride
+# Surcharge de lister macOS
+
+# Windows
+Thumbs.db
+# Cache des miniatures
+ehthumbs.db
+# Cache des miniatures (vista+)
+Desktop.ini
+# Configuration d'affichage des dossiers
+
+# Linux
+*~
+# Fichiers temporaires/backup
+
+# ============================================
+# BUILD & DIST
+# ============================================
+dist/
+# Fichiers compilés/distribués
+build/
+# Fichiers de build
+out/
+# Sortie de compilation
+.next/
+# Build Next.js
+.cache/
+# Cache des outils de build
+
+# ============================================
+# MONGODB (si base locale)
+# ============================================
+data/
+# Données MongoDB locales
+mongodb-data/
+# Dossier spécifique pour MongoDB
+*.mongo
+# Fichiers MongoDB+
