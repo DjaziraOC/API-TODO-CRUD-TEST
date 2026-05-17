@@ -133,11 +133,20 @@ echo ""
 #   --bail                       : 🛑 Arrêt à la première erreur (fail fast)
 # ============================================
 
+newman run "$COLLECTION" \
+  --environment "$ENVIRONMENT" \
+  --reporters cli,json,htmlextra,junit \
+  --reporter-json-export "$REPORT_DIR/mongoose_report_$TIMESTAMP.json" \
+  --reporter-htmlextra-export "$REPORT_DIR/mongoose_report_$TIMESTAMP.html" \
+  --reporter-junit-export "$REPORT_DIR/mongoose_report_$TIMESTAMP.xml" \
+  --reporter-htmlextra-title "Todo API - Tests Mongoose" \
+  --reporter-htmlextra-logs true \
+  --delay-request 300 \
+  --timeout-request 60000 \
+  --timeout-script 60000 \
+  --bail
 
-newman run "$COLLECTION" --environment "$ENVIRONMENT" --reporters cli,json,htmlextra,junit --reporter-json-export "$REPORT_DIR/mongoose_report_$TIMESTAMP.json" --reporter-htmlextra-export "$REPORT_DIR/mongoose_report_$TIMESTAMP.html" --reporter-junit-export "$REPORT_DIR/mongoose_report_$TIMESTAMP.xml" --reporter-htmlextra-title "Todo API - Tests Mongoose" --reporter-htmlextra-logs true --delay-request 300 --timeout 60000 --bail
-# Capture le code de sortie de Newman (0 = succès, autre = erreur)
 EXIT_CODE=$?
-
 
 echo ""
 echo "📁 Emplacement des rapports : $REPORT_DIR"
