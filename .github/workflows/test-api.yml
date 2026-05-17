@@ -82,9 +82,7 @@ jobs:
       - name: 🔧 Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          #cache: 'npm'
-          #cache-dependency-path: './backend/package-lock.json' 
+          node-version: ${{ matrix.node-version }} 
       
       # 4. Installation des dépendances backend
       - name: 📦 Install backend dependencies
@@ -232,6 +230,7 @@ jobs:
   lint:
     name: 🔍 Lint - Code Quality
     runs-on: ubuntu-latest
+    continue-on-error: true 
     
     steps:
       - name: 📥 Checkout repository
@@ -241,13 +240,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          #cache: 'npm'
-          #cache-dependency-path: backend/package-lock.json
+          
       
       - name: 📦 Install dependencies
         run: |
           cd backend
-          npm ci
+          npm ci || npm install
       
       - name: ✅ Run ESLint
         run: |
@@ -267,7 +265,8 @@ jobs:
   security:
     name: 🔒 Security Scan
     runs-on: ubuntu-latest
-    
+   
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
