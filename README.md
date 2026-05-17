@@ -8,21 +8,21 @@
 
 ## 📖 Table des matières
 
-- [À propos](#-à-propos)
-- [Fonctionnalités](#-fonctionnalités)
-- [Technologies](#-technologies)
-- [Prérequis](#-prérequis)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Démarrage](#-démarrage)
-- [Documentation API](#-documentation-api)
-- [Tests](#-tests)
-- [CI/CD](#-cicd)
-- [Structure du projet](#-structure-du-projet)
-- [Bonnes pratiques](#-bonnes-pratiques)
-- [Dépannage](#-dépannage)
-- [Contributions](#-contributions)
-- [Licence](#-licence)
+- [À propos](#a-propos)
+- [Fonctionnalités](#fonctionnalites)
+- [Technologies](#technologies)
+- [Prérequis](#prerequis)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Démarrage](#demarrage)
+- [Documentation API](#documentation-api)
+- [Tests](#tests)
+- [CI/CD](#cicd)
+- [Structure du projet](#structure-du-projet)
+- [Bonnes pratiques](#bonnes-pratiques)
+- [Dépannage](#depannage)
+- [Contributions](#contributions)
+- [Licence](#licence)
 
 ---
 
