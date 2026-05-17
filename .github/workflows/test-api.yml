@@ -97,7 +97,7 @@ jobs:
         run: |
           npm install -g newman@6
           npm install -g newman-reporter-htmlextra@1.23
-          npm install -g newman-reporter-junit
+          --reporter-junit-export "mongoose-test-reports/junit_report_${TIMESTAMP}.xml"
       
       # 6. Création du fichier .env (secrets)
       - name: 🔐 Create .env file
