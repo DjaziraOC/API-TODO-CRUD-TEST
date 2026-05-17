@@ -1,8 +1,3 @@
-## ✅ **Voici ton README corrigé avec des liens cliquables**
-
-J'ai supprimé les émojis dans les titres et les ancres, et corrigé les accents.
-
-**Copie-colle ceci intégralement :**
 
 ```markdown
 # 📝 Todo API - Backend
@@ -12,30 +7,30 @@ J'ai supprimé les émojis dans les titres et les ancres, et corrigé les accent
 ![MongoDB](https://img.shields.io/badge/MongoDB-6+-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-## Table des matieres
+## 📖 Table des matières
 
-- [A propos](#a-propos)
-- [Fonctionnalites](#fonctionnalites)
-- [Technologies](#technologies)
-- [Prerequis](#prerequis)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Demarrage](#demarrage)
-- [Documentation API](#documentation-api)
-- [Tests](#tests)
-- [CI/CD](#cicd)
-- [Structure du projet](#structure-du-projet)
-- [Bonnes pratiques](#bonnes-pratiques)
-- [Depannage](#depannage)
-- [Contributions](#contributions)
-- [Licence](#licence)
-- [Auteur](#auteur)
-- [Remerciements](#remerciements)
-- [Support](#support)
+- [🎯 À propos](#a-propos)
+- [✨ Fonctionnalités](#fonctionnalites)
+- [🛠 Technologies](#technologies)
+- [📋 Prérequis](#prerequis)
+- [🚀 Installation](#installation)
+- [⚙️ Configuration](#configuration)
+- [🎮 Démarrage](#demarrage)
+- [📚 Documentation API](#documentation-api)
+- [🧪 Tests](#tests)
+- [🔄 CI/CD](#cicd)
+- [📁 Structure du projet](#structure-du-projet)
+- [💡 Bonnes pratiques](#bonnes-pratiques)
+- [🔧 Dépannage](#depannage)
+- [🤝 Contributions](#contributions)
+- [📄 Licence](#licence)
+- [👨‍💻 Auteur](#auteur)
+- [🙏 Remerciements](#remerciements)
+- [📞 Support](#support)
 
 ---
 
-## A propos
+## 🎯 À propos
 
 API RESTful complète pour la gestion de tâches (Todo List) avec authentification JWT et stockage MongoDB. Conçue avec les meilleures pratiques de développement Node.js et prête pour la production.
 
@@ -49,29 +44,29 @@ API RESTful complète pour la gestion de tâches (Todo List) avec authentificati
 
 ---
 
-## Fonctionnalites
+## ✨ Fonctionnalités
 
-### Authentification
+### 🔐 Authentification
 - Inscription utilisateur (`/api/auth/register`)
 - Connexion utilisateur (`/api/auth/login`)
 - JWT tokens sécurisés
 - Protection des routes privées
 
-### Gestion des tâches (CRUD)
-- Creer une tâche
-- Lire toutes les tâches d'un utilisateur
-- Lire une tâche spécifique
-- Modifier une tâche
-- Supprimer une tâche
+### 📋 Gestion des tâches (CRUD)
+- ✅ Créer une tâche
+- 📖 Lire toutes les tâches d'un utilisateur
+- 🔍 Lire une tâche spécifique
+- ✏️ Modifier une tâche
+- ❌ Supprimer une tâche
 
-### Securite
+### 🔒 Sécurité
 - Hachage des mots de passe (bcrypt)
 - Validation des données (express-validator)
 - Protection contre les injections NoSQL
 - Headers de sécurité (helmet)
 - Rate limiting anti-DoS
 
-### Tests & Qualite
+### 📊 Tests & Qualité
 - Tests unitaires avec Jest
 - Tests API avec Postman/Newman
 - Pipeline CI/CD (GitHub Actions)
@@ -79,7 +74,7 @@ API RESTful complète pour la gestion de tâches (Todo List) avec authentificati
 
 ---
 
-## Technologies
+## 🛠 Technologies
 
 | Catégorie | Technologies |
 |-----------|--------------|
@@ -95,7 +90,7 @@ API RESTful complète pour la gestion de tâches (Todo List) avec authentificati
 
 ---
 
-## Prerequis
+## 📋 Prérequis
 
 Avant de commencer, assurez-vous d'avoir installé :
 
@@ -104,7 +99,7 @@ Avant de commencer, assurez-vous d'avoir installé :
 - **MongoDB** (version 6+, local ou Atlas)
 - **Git** (pour cloner le repository)
 
-### Verifier les versions
+### Vérifier les versions
 
 ```bash
 node --version   # v18.x ou v20.x
@@ -115,7 +110,7 @@ git --version    # 2.x ou plus
 
 ---
 
-## Installation
+## 🚀 Installation
 
 ### 1. Cloner le repository
 
@@ -136,7 +131,7 @@ npm install
 cp .env.example .env
 ```
 
-### 4. Demarrer MongoDB
+### 4. Démarrer MongoDB
 
 **Option A - MongoDB local :**
 ```bash
@@ -160,7 +155,7 @@ npm start
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 ### Variables d'environnement
 
@@ -197,7 +192,7 @@ mongodb+srv://<username>:<password>@cluster.mongodb.net/nom_base
 
 ---
 
-## Demarrage
+## 🎮 Démarrage
 
 ### Développement
 
@@ -223,14 +218,14 @@ curl http://localhost:5000/health
 
 ---
 
-## Documentation API
+## 📚 Documentation API
 
 ### Base URL
 ```
 http://localhost:5000/api
 ```
 
-### Endpoints d'authentification
+### 🔐 Endpoints d'authentification
 
 #### `POST /api/auth/register` - Inscription
 ```json
@@ -273,7 +268,7 @@ http://localhost:5000/api
 }
 ```
 
-### Endpoints des tâches (protégés)
+### 📝 Endpoints des tâches (protégés)
 
 > **Note:** Ajouter le header `Authorization: Bearer <token>` pour toutes ces routes
 
@@ -322,21 +317,21 @@ curl -X DELETE http://localhost:5000/api/tasks/60d5f9f8b8e5a72d4c8e4e3b \
   -H "Authorization: Bearer <token>"
 ```
 
-### Codes de statut HTTP
+### 📊 Codes de statut HTTP
 
 | Code | Signification |
 |------|---------------|
-| 200 | Succès |
-| 201 | Créé |
-| 400 | Requête invalide |
-| 401 | Non authentifié |
-| 403 | Non autorisé |
-| 404 | Ressource non trouvée |
-| 500 | Erreur serveur |
+| 200 | ✅ Succès |
+| 201 | ✅ Créé |
+| 400 | ❌ Requête invalide |
+| 401 | ❌ Non authentifié |
+| 403 | ❌ Non autorisé |
+| 404 | ❌ Ressource non trouvée |
+| 500 | ❌ Erreur serveur |
 
 ---
 
-## Tests
+## 🧪 Tests
 
 ### Tests unitaires (Jest)
 
@@ -375,17 +370,17 @@ chmod +x run-mongoose-tests.sh
 
 ---
 
-## CI/CD
+## 🔄 CI/CD
 
 ### Pipeline GitHub Actions
 
 Le projet utilise GitHub Actions pour l'intégration continue.
 
 **Déclencheurs :**
-- Push sur `main`, `master`, `develop`
-- Pull requests vers `main`/`master`
-- Exécution manuelle (`workflow_dispatch`)
-- Programmé (tous les jours à 6h)
+- ✅ Push sur `main`, `master`, `develop`
+- ✅ Pull requests vers `main`/`master`
+- ✅ Exécution manuelle (`workflow_dispatch`)
+- ✅ Programmé (tous les jours à 6h)
 
 **Jobs exécutés :**
 
@@ -404,7 +399,7 @@ Le projet utilise GitHub Actions pour l'intégration continue.
 
 ---
 
-## Structure du projet
+## 📁 Structure du projet
 
 ```
 API-TODO-CRUD-TEST/
@@ -437,30 +432,30 @@ API-TODO-CRUD-TEST/
 
 ---
 
-## Bonnes pratiques
+## 💡 Bonnes pratiques
 
-### Securite
-- Toutes les routes protégées utilisent JWT
-- Mots de passe hashés avec bcrypt
-- Validation des entrées utilisateur
-- Headers de sécurité (helmet)
-- Rate limiting contre les attaques DoS
+### Sécurité
+- ✅ Toutes les routes protégées utilisent JWT
+- ✅ Mots de passe hashés avec bcrypt
+- ✅ Validation des entrées utilisateur
+- ✅ Headers de sécurité (helmet)
+- ✅ Rate limiting contre les attaques DoS
 
 ### Code
-- Architecture MVC
-- Gestion d'erreur centralisée
-- Variables d'environnement (.env)
-- ESLint + Prettier pour le style
+- ✅ Architecture MVC
+- ✅ Gestion d'erreur centralisée
+- ✅ Variables d'environnement (.env)
+- ✅ ESLint + Prettier pour le style
 
 ### Tests
-- Tests unitaires pour la logique métier
-- Tests d'intégration pour les API
-- Couverture de code > 80%
-- Tests automatisés en CI
+- ✅ Tests unitaires pour la logique métier
+- ✅ Tests d'intégration pour les API
+- ✅ Couverture de code > 80%
+- ✅ Tests automatisés en CI
 
 ---
 
-## Depannage
+## 🔧 Dépannage
 
 ### Erreur : MongoDB ne démarre pas
 
@@ -508,7 +503,7 @@ npm install
 
 ---
 
-## Contributions
+## 🤝 Contributions
 
 Les contributions sont les bienvenues !
 
@@ -520,27 +515,27 @@ Les contributions sont les bienvenues !
 
 ### Standards de contribution
 
-- Suivre ESLint + Prettier
-- Ajouter des tests pour les nouvelles fonctionnalités
-- Mettre à jour la documentation
-- Passer tous les tests CI
+- ✅ Suivre ESLint + Prettier
+- ✅ Ajouter des tests pour les nouvelles fonctionnalités
+- ✅ Mettre à jour la documentation
+- ✅ Passer tous les tests CI
 
 ---
 
-## Licence
+## 📄 Licence
 
-Ce projet est sous licence MIT.
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus d'informations.
 
 ---
 
-## Auteur
+## 👨‍💻 Auteur
 
 **DjaziraOC**
 - GitHub: [@DjaziraOC](https://github.com/DjaziraOC/)
 
 ---
 
-## Remerciements
+## 🙏 Remerciements
 
 - Express.js team
 - MongoDB team
@@ -549,7 +544,7 @@ Ce projet est sous licence MIT.
 
 ---
 
-## Support
+## 📞 Support
 
 Pour toute question ou problème :
 - Ouvrir une **issue** sur GitHub
