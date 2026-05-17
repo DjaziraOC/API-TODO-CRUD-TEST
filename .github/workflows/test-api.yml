@@ -97,7 +97,7 @@ jobs:
         run: |
           npm install -g newman@6
           npm install -g newman-reporter-htmlextra@1.23
-          --reporter-junit-export "mongoose-test-reports/junit_report_${TIMESTAMP}.xml"
+          
       
       # 6. Création du fichier .env (secrets)
       - name: 🔐 Create .env file
@@ -152,23 +152,12 @@ jobs:
         id: newman
         run: |
           cd backend/test
-          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-          
-          newman run "Todo-API-Mongoose-Tests.postman_collection.json" \
-            --environment "Todo-Mongoose-Env.postman_environment.json" \
-            --reporters cli,json,junit,htmlextra \
-            --reporter-json-export "mongoose-test-reports/newman_report_${TIMESTAMP}.json" \
-            --reporter-junit-export "mongoose-test-reports/junit_report_${TIMESTAMP}.xml" \
-            --reporter-htmlextra-export "mongoose-test-reports/html_report_${TIMESTAMP}.html" \
-            --reporter-htmlextra-title "Todo API - Tests CI/CD" \
-            --reporter-htmlextra-logs true \
-            --delay-request 300 \
-            --timeout-request 60000 \
-            --timeout-script 60000 \
-            --bail
-          
-          echo "status=$?" >> $GITHUB_OUTPUT
-      
+          chmod +x run-newman-tests.sh
+          ./run-newman-tests.sh
+          cd backend/test
+          chmod +x run-mongoose-tests.sh  
+          ./run-mongoose-tests.sh  
+
       # 11. Génération du rapport README dynamique
       - name: 📊 Generate dynamic README report
         if: always() && success()
