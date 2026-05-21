@@ -1,11 +1,32 @@
-
 ```markdown
 # 📝 Todo API - Backend
 
-![CI Status](https://github.com/DjaziraOC/API-TODO-CRUD-TEST/actions/workflows/test-api.yml/badge.svg)
+![CI Status](https://github.com/YOUR_USERNAME/API-TODO-CRUD-TEST/actions/workflows/test-api.yml/badge.svg)
 ![Node Version](https://img.shields.io/badge/node-18%20%7C%2020-green)
 ![MongoDB](https://img.shields.io/badge/MongoDB-6+-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+
+## 📖 Table des matières
+
+- [🎯 À propos](#à-propos)
+
+- [✨ Fonctionnalités](#fonctionnalités)
+- [🛠 Technologies](#technologies)
+- [📋 Prérequis](#prérequis)
+- [🚀 Installation](#installation)
+- [⚙️ Configuration](#configuration)
+- [🎮 Démarrage](#démarrage)
+- [📚 Documentation API](#documentation-api)
+- [🧪 Tests](#tests)
+- [🔄 CI/CD](#ci/cd)
+- [📁 Structure du projet](#structure-du-projet)
+- [💡 Bonnes pratiques](#bonnes-pratiques)
+- [🔧 Dépannage](#dépannage)
+- [🤝 Contributions](#contributions)
+- [📄 Licence](#licence)
+- [👨‍💻 Auteur](#auteur)
+
+
 
 ---
 
@@ -332,8 +353,8 @@ npm run test:coverage
 cd test
 
 # Rendre le script exécutable
-chmod +x run-mongoose-tests.sh
 
+chmod +x run-mongoose-tests.sh
 # Exécuter les tests
 ./run-mongoose-tests.sh
 
@@ -373,7 +394,7 @@ Le projet utilise GitHub Actions pour l'intégration continue.
 ### Badge de statut
 
 ```markdown
-![CI](https://github.com/DjaziraOC/API-TODO-CRUD-TEST/actions/workflows/test-api.yml/badge.svg)
+![CI](https://github.com/VOTRE_USERNAME/API-TODO-CRUD-TEST/actions/workflows/test-api.yml/badge.svg)
 ```
 
 ---
@@ -509,8 +530,9 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus d'informatio
 
 ## 👨‍💻 Auteur
 
-**DjaziraOC**
+**Votre Nom**
 - GitHub: [@DjaziraOC](https://github.com/DjaziraOC/)
+- 
 
 ---
 
@@ -527,7 +549,7 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus d'informatio
 
 Pour toute question ou problème :
 - Ouvrir une **issue** sur GitHub
-```
+
 
 
 
