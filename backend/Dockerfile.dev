@@ -1,0 +1,25 @@
+# ============================================
+# DÉVELOPPEMENT - Simple avec hot-reload
+# ============================================
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Installer curl pour healthcheck
+RUN apk add --no-cache curl
+
+# Copier package.json
+COPY package*.json ./
+
+# Installer toutes les dépendances (reproductible avec package-lock)
+RUN npm ci
+
+# Copier le code source
+COPY . .
+
+# Port d'exposition
+EXPOSE 5000
+
+# Commandes de démarrage
+CMD ["npm", "run", "dev"]

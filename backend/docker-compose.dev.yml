@@ -1,0 +1,49 @@
+# Définition des services (conteneurs) à exécuter
+services:
+
+  # Service backend - l'application Node.js/Express
+  backend:
+    # Configuration de la construction de l'image
+    build:
+      context: . # Utilise le répertoire courant comme contexte de build
+      dockerfile: Dockerfile.dev
+
+    container_name: todo-backend-dev # Nom explicite pour le conteneur (facilite les commandes docker)
+    ports:
+      - "${PORT_BACKEND_HOST:-5000}:${PORT_BACKEND_CONTAINER:-5000}" # port_hôte:port_conteneur
+    # Variables d'environnement spécifiées directement
+    environment:
+      - NODE_ENV=development # Environnement d'exécution
+      - PORT=${PORT_BACKEND_CONTAINER:-5000} # Port interne de l'application
+      - MONGODB_URI=${MONGODB_URI} # URI MongoDB (valeur depuis .env ou shell)
+      - JWT_SECRET=${JWT_SECRET} # Secret pour signer les tokens JWT
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h} # Durée des tokens avec valeur par défaut
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET} # Secret différent pour les refresh tokens     
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d} # Durée des refresh tokens
+      - BCRYPT_SALT_ROUNDS=${BCRYPT_SALT_ROUNDS:-10} # Coût du hachage bcrypt
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:${PORT_FRONTEND_HOST:-3000}} # Origine frontend autorisée
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000} # Fenêtre de rate limiting (15 min)
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100} # Max requêtes par fenêtre
+    # Volumes pour le montage des fichiers (développement)
+    volumes:
+      - .:/app # Montage bidirectionnel du code source (modifications immédiates)
+      - /app/node_modules # Volume anonyme pour éviter l'écrasement des node_modules
+    # Fichier de variables d'environnement externe
+    env_file:
+      - .env # Charge les variables depuis un fichier .env
+    # Configuration réseau
+    networks:
+      - todo-network # Connecte le service au réseau défini plus bas
+    # Healthcheck pour surveiller l'état du service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"] # Vérifie l'endpoint /health
+      interval: 30s # Exécution toutes les 30 secondes
+      timeout: 10s # Timeout de 10 secondes par vérification
+      retries: 3 # Nombre de tentatives avant déclaration d'échec
+    # Politique de redémarrage automatique
+    restart: unless-stopped # Redémarre sauf si arrêté manuellement
+
+# Définition des réseaux
+networks:
+  todo-network:
+    driver: bridge # Driver réseau standard pour la communication entre conteneurs
