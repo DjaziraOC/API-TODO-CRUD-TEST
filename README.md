@@ -9,13 +9,13 @@
 ## 📖 Table des matières
 
 - [🎯 À propos](#à-propos)
-
 - [✨ Fonctionnalités](#fonctionnalités)
 - [🛠 Technologies](#technologies)
 - [📋 Prérequis](#prérequis)
 - [🚀 Installation](#installation)
 - [⚙️ Configuration](#configuration)
 - [🎮 Démarrage](#démarrage)
+- [🖥️ Frontend (React)](#frontend-react)
 - [📚 Documentation API](#documentation-api)
 - [🧪 Tests](#tests)
 - [🔄 CI/CD](#ci/cd)
@@ -163,19 +163,19 @@ Créez un fichier `.env` à la racine du dossier `backend` :
 
 ```env
 # Serveur
-PORT=5000
+PORT=<numéro de port>
 NODE_ENV=development
 
 # Base de données
-MONGODB_URI=mongodb://localhost:27017/todo_db
+MONGODB_URI=<mongodb uri>
 
 # Authentification
-JWT_SECRET=votre_super_secret_jwt_256_bits_minimum
+JWT_SECRET=<mettre un secret fort et privé>
 JWT_EXPIRE=7d
 
 # Sécurité (optionnel)
-RATE_LIMIT_WINDOW_MS=900000   # 15 minutes
-RATE_LIMIT_MAX_REQUESTS=100   # 100 requêtes par fenêtre
+RATE_LIMIT_WINDOW_MS=<valeur>   # ex: 15 minutes
+RATE_LIMIT_MAX_REQUESTS=<valeur>   # ex: 100 requêtes par fenêtre
 ```
 
 ### Configuration MongoDB
@@ -194,12 +194,40 @@ mongodb+srv://<username>:<password>@cluster.mongodb.net/nom_base
 
 ## 🎮 Démarrage
 
-### Développement
+### Développement (Backend seul)
 
 ```bash
 npm run dev
-# Serveur démarré sur http://localhost:5000
+# Serveur démarré sur http://localhost:{{port}}
 # Auto-reload activé pour les modifications
+```
+
+### Développement (Backend + Frontend)
+
+Démarrez les deux services dans deux terminaux.
+
+**1) Backend**
+
+```bash
+cd backend
+npm install
+npm run dev
+# Backend: <URL backend>
+```
+
+**2) Frontend (React)**
+
+```bash
+cd frontend
+npm install
+npm run dev
+# Frontend: <URL frontend>
+```
+
+Le frontend appelle le backend via l’URL définie dans `frontend/.env` (optionnel) :
+
+```env
+VITE_API_URL=<URL backend>
 ```
 
 ### Production
@@ -212,9 +240,40 @@ npm start
 ### Vérification du serveur
 
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:{{port}}/health
 # Réponse : { "status": "OK", "timestamp": "2026-01-01T00:00:00.000Z" }
 ```
+
+
+---
+
+## 🖥️ Frontend (React)
+
+Le projet `frontend/` est une SPA (React) qui consomme l’API backend (JWT + CRUD tasks).
+
+### Prérequis
+- Node.js 18+
+
+### Démarrage (Frontend)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+- Frontend : <URL frontend>
+- Backend attendu : <URL backend>
+
+### Configuration de l’API
+
+Optionnel : créer `frontend/.env` :
+
+```env
+VITE_API_URL=<URL backend>
+```
+
+Si le fichier `.env` n’existe pas, le frontend utilise <URL backend> par défaut.
 
 ---
 
@@ -222,7 +281,7 @@ curl http://localhost:5000/health
 
 ### Base URL
 ```
-http://localhost:5000/api
+http://localhost:{{port}}/api
 ```
 
 ### 🔐 Endpoints d'authentification
@@ -241,7 +300,7 @@ http://localhost:5000/api
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIs...",
   "user": {
-    "id": "60d5f9f8b8e5a72d4c8e4e3a",
+    "id": "60d5f9f8b8e5a72d4c8e4...",
     "username": "johndoe",
     "email": "john@example.com"
   }
@@ -261,7 +320,7 @@ http://localhost:5000/api
   "success": true,
   "token": "eyJhbGciOiJIUzI1NiIs...",
   "user": {
-    "id": "60d5f9f8b8e5a72d4c8e4e3a",
+    "id": "60d5f9f8b8e5a72d4c8e4...",
     "username": "johndoe",
     "email": "john@example.com"
   }
@@ -274,7 +333,7 @@ http://localhost:5000/api
 
 #### `GET /api/tasks` - Récupérer toutes les tâches
 ```bash
-curl -H "Authorization: Bearer <token>" http://localhost:5000/api/tasks
+curl -H "Authorization: Bearer <token>" http://localhost:{{port}}/api/tasks
 ```
 
 **Réponse :**
@@ -288,7 +347,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/api/tasks
       "title": "Faire les courses",
       "description": "Acheter du lait, du pain et des œufs",
       "completed": false,
-      "user": "60d5f9f8b8e5a72d4c8e4e3a",
+      "user": "60d5f9f8b8e5a72d4c8e4...",
       "createdAt": "2026-01-01T00:00:00.000Z"
     }
   ]
@@ -297,7 +356,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/api/tasks
 
 #### `POST /api/tasks` - Créer une tâche
 ```bash
-curl -X POST http://localhost:5000/api/tasks \
+curl -X POST http://localhost:{{port}}/api/tasks \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"title":"Nouvelle tâche","description":"Description optionnelle"}'
@@ -305,7 +364,7 @@ curl -X POST http://localhost:5000/api/tasks \
 
 #### `PUT /api/tasks/:id` - Modifier une tâche
 ```bash
-curl -X PUT http://localhost:5000/api/tasks/60d5f9f8b8e5a72d4c8e4e3b \
+curl -X PUT http://localhost:{{port}}/api/tasks/60d5f9f8b8e5a72d4c8e4... \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"title":"Titre modifié","completed":true}'
@@ -313,7 +372,7 @@ curl -X PUT http://localhost:5000/api/tasks/60d5f9f8b8e5a72d4c8e4e3b \
 
 #### `DELETE /api/tasks/:id` - Supprimer une tâche
 ```bash
-curl -X DELETE http://localhost:5000/api/tasks/60d5f9f8b8e5a72d4c8e4e3b \
+curl -X DELETE http://localhost:{{port}}/api/tasks/60d5f9f8b8e5a72d4c8e4... \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -403,32 +462,38 @@ Le projet utilise GitHub Actions pour l'intégration continue.
 
 ```
 API-TODO-CRUD-TEST/
-├── .github/workflows/
-│   └── test-api.yml              # Pipeline CI/CD
-├── backend/
-│   ├── models/                    # Modèles Mongoose
-│   │   ├── Task.js
-│   │   └── User.js
-│   ├── controllers/               # Logique métier
-│   │   ├── authController.js
-│   │   └── taskController.js
-│   ├── routes/                    # Routes API
-│   │   ├── authRoutes.js
-│   │   └── taskRoutes.js
-│   ├── middleware/                # Middleware Express
-│   │   ├── auth.js
-│   │   └── errorHandler.js
-│   ├── test/                      # Tests Postman
-│   │   ├── run-newman-tests.sh
-│   │   ├── Todo-API-Mongoose-Tests.postman_collection.json
-│   │   └── Todo-Mongoose-Env.postman_environment.json
-│   ├── __tests__/                 # Tests Jest
-│   ├── server.js                  # Point d'entrée
+├── .github/                      # GitHub Actions (CI/CD)
+│   └── workflows/
+│       └── test-api.yml
+├── backend/                      # API Node.js + Express + MongoDB
+│   ├── config/                   # Config (ex: jwt)
+│   ├── controllers/             # Logique métier
+│   ├── middleware/              # Middlewares Express (auth, validation, etc.)
+│   ├── models/                  # Modèles Mongoose (Task, User)
+│   ├── routes/                  # Routes API (auth, tasks)
+│   ├── test/                     # Tests (Jest + scripts + Postman/Newman)
+│   ├── utils/                    # Helpers
+│   ├── server.js                 # Point d'entrée
 │   ├── package.json
-│   └── .env                       # Variables d'environnement
+│   └── (Dockerfile(s), docker-compose.dev.yml, scripts test, etc.)
+├── frontend/                     # SPA React (Vite) pour consommer l’API
+│   ├── src/
+│   │   ├── pages/               # AuthPage, TasksPage
+│   │   ├── lib/                 # Client API (api.ts)
+│   │   ├── store/               # Redux slices (authSlice, tasksSlice)
+│   │   ├── styles/              # styles globaux
+│   │   └── App.tsx
+│   ├── index.html
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   ├── package.json
+│   └── (node_modules, dist/, etc. ignorés)
 ├── README.md
-└── .gitignore
+├── WORKLOG.md
+├── LICENSE
+└── (autres fichiers de meta: docs, scripts, etc.)
 ```
+
 
 ---
 
@@ -470,15 +535,15 @@ brew services start mongodb-community  # Mac
 # Alternative : utiliser MongoDB Atlas (cloud)
 ```
 
-### Erreur : Port 5000 déjà utilisé
+### Erreur : Port {{port}} déjà utilisé
 
 ```bash
-# Trouver le processus utilisant le port 5000
-lsof -i :5000  # Mac/Linux
-netstat -ano | findstr :5000  # Windows
+# Trouver le processus utilisant le port {{port}}
+lsof -i :{{port}}  # Mac/Linux
+netstat -ano | findstr :{{port}}  # Windows
 
 # Changer le port dans .env
-PORT=5001
+PORT=<numéro de port>
 ```
 
 ### Erreur : JWT_SECRET manquant
@@ -488,7 +553,7 @@ PORT=5001
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # Copier la sortie dans .env
-JWT_SECRET=le_secret_généré
+JWT_SECRET=<coller le secret généré>
 ```
 
 ### Erreur : npm ci échoue
