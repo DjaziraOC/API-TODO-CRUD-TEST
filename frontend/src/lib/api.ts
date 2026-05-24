@@ -73,7 +73,7 @@ export const api = {
       ),
     register: (payload: { username: string; email: string; password: string }) =>
       request<{ token: string; user: { email?: string; username?: string } }>(
-'/api/auth/signup',
+       '/api/auth/signup',
         { method: 'POST', body: payload }
       )
   },
