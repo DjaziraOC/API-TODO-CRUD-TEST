@@ -1,0 +1,333 @@
+name: Todo API - Tests Complets
+
+# ============================================
+# DÉCLENCHEURS
+# ============================================
+on:
+  # Déclenché automatiquement à chaque push
+  push:
+    branches: [ main, master, develop ]
+  
+  # Déclenché automatiquement à chaque pull request
+  pull_request:
+    branches: [ main, master ]
+  
+  # Permet l'exécution manuelle depuis l'interface GitHub
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Mode debug (logs détaillés)'
+        type: boolean
+        default: false
+        required: false
+  
+  # Exécution programmée (chaque jour à 6h)
+  schedule:
+    - cron: '0 6 * * *'
+
+# ============================================
+# PERMISSIONS
+# ============================================
+permissions:
+  contents: read
+  checks: write
+  actions: read
+  security-events: write
+
+# ============================================
+# JOBS
+# ============================================
+jobs:
+  # ==========================================
+  # JOB 1 : TESTS NEWMAN COMPLETS
+  # ==========================================
+  newman-tests:
+    name: 🧪 Newman - Tests Postman
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+      fail-fast: false
+    
+    steps:
+      # 1. Récupération du code
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      
+      # 2. Debug : structure des fichiers
+      - name: 🔍 Debug - Afficher la structure
+        if: github.event.inputs.debug_enabled == 'true'
+        run: |
+          echo "=== Structure du projet ==="
+          ls -la
+          echo "=== Structure backend ==="
+          ls -la backend/ || echo "Dossier backend non trouvé"
+          echo "=== Structure tests ==="
+          ls -la backend/test/ || echo "Dossier tests non trouvé"
+      
+      # 3. Installation Node.js
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }} 
+      
+      # 4. Installation des dépendances backend
+      - name: 📦 Install backend dependencies
+        run: |
+          cd backend
+          npm ci
+        env:
+          CI: true
+
+      # 5. Installation MongoDB Memory Server (À AJOUTER)
+      - name: 📦 Install MongoDB Memory Server
+        run: |
+          cd backend
+          npm install --save-dev mongodb-memory-server          
+      
+      # 6. Installation de Newman et reporters
+      - name: 📦 Install Newman & reporters
+        run: |
+          npm install -g newman@6
+          npm install -g newman-reporter-htmlextra@1.23
+          
+      # 7. Création du fichier .env (secrets)
+      - name: 🔐 Create .env file
+        run: |
+          cd backend
+          echo "PORT=5000" >> .env
+          echo "MONGODB_URI=mongodb://localhost:27017/todo_test" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET || 'test_secret_123456789' }}" >> .env
+          echo "JWT_EXPIRE=7d" >> .env
+          echo "NODE_ENV=test" >> .env
+          cat .env
+          
+      # 8. Démarrage du serveur API avec MongoDB en mémoire
+      - name: 🚀 Start API server
+        run: |
+          cd backend
+          # Crée un script de démarrage avec MongoDB en mémoire
+          cat > start-with-memory.js << 'EOF'
+          const { MongoMemoryServer } = require('mongodb-memory-server');
+          const mongoose = require('mongoose');
+          
+          (async () => {
+            try {
+              const mongod = await MongoMemoryServer.create();
+              const uri = mongod.getUri();
+              process.env.MONGODB_URI = uri;
+              
+              await mongoose.connect(uri);
+              console.log('✅ In-memory MongoDB started at:', uri);
+              
+              // Démarre le serveur Express
+              require('./server');
+            } catch (error) {
+              console.error('Failed to start:', error);
+              process.exit(1);
+            }
+          })();
+          EOF
+          
+          node start-with-memory.js > server.log 2>&1 &
+          echo $! > server.pid
+          # Attendre que le serveur soit prêt
+          for i in {1..30}; do
+            if curl -s http://localhost:5000/health > /dev/null; then
+              echo "✅ Serveur API démarré"
+              exit 0
+            fi
+            echo "Attente du serveur... ($i/30)"
+            sleep 1
+          done
+          echo "❌ Serveur API non démarré"
+          cat server.log
+          exit 1
+
+      # 9. Création du dossier des rapports
+      - name: 📁 Create reports directory
+        run: mkdir -p backend/test/mongoose-test-reports
+       
+      # 10. Exécution des tests Newman
+      - name: 🧪 Run Newman Postman tests
+        id: newman
+        run: |
+          cd backend/test
+          chmod +x run-mongoose-tests.sh  
+          ./run-mongoose-tests.sh  
+
+          echo "status=$?" >> $GITHUB_OUTPUT
+
+      # 11. Génération du rapport README dynamique
+      - name: 📊 Generate dynamic README report
+        if: always() && success()
+        run: |
+          cd backend/test
+          if [ -f "generate-test-report.sh" ]; then
+            chmod +x generate-test-report.sh
+            ./generate-test-report.sh
+          else
+            echo "⚠️ generate-test-report.sh non trouvé"
+          fi
+      
+      # 12. Upload des artefacts (rapports)
+      - name: 📤 Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: newman-reports-node-${{ matrix.node-version }}
+          path: |
+            backend/test/mongoose-test-reports/
+            backend/server.log
+          retention-days: 30
+      
+      # 13. Upload du rapport JUnit pour GitHub Checks
+      - name: 📤 Upload JUnit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit-reports-node-${{ matrix.node-version }}
+          path: backend/test/mongoose-test-reports/*.xml
+          retention-days: 30
+      
+      # 14. Nettoyage
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          cd backend
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || true
+          fi
+      
+      # 15. Logs de débogage en cas d'échec
+      - name: 📋 Debug logs on failure
+        if: failure()
+        run: |
+          echo "=== Server logs ==="
+          cat backend/server.log 2>/dev/null || echo "No server logs"
+          echo ""
+          echo "=== Node version ==="
+          node --version
+          npm --version
+          echo ""
+          echo "=== Newman version ==="
+          newman --version
+
+  # ==========================================
+  # JOB 2 : LINT & CODE QUALITY
+  # ==========================================
+  lint:
+    name: 🔍 Lint - Code Quality
+    runs-on: ubuntu-latest
+    continue-on-error: true 
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      
+      - name: 📦 Install dependencies
+        run: |
+          cd backend
+          npm ci || npm install
+      
+      - name: ✅ Run ESLint
+        run: |
+          cd backend
+          npm run lint -- --max-warnings 0 || true
+        continue-on-error: true
+      
+      - name: 🎨 Check Prettier formatting
+        run: |
+          cd backend
+          npx prettier --check "**/*.js" || true
+        continue-on-error: true
+
+  # ==========================================
+  # JOB 3 : SÉCURITÉ (SCA)
+  # ==========================================
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+   
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      
+      # Scan des vulnérabilités npm
+      - name: 🔍 npm audit
+        run: |
+          cd backend
+          npm audit --production --audit-level=moderate || true
+      
+      # Scan des secrets exposés
+      - name: 🔐 Check for secrets
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+
+  # ==========================================
+  # JOB 4 : NOTIFICATION (optionnel)
+  # ==========================================
+  
+  notify:
+    name: 📧 Notification
+    runs-on: ubuntu-latest
+    needs: [newman-tests, lint, security]
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+      - name: 📊 Check status
+        id: status
+        run: |
+          if [[ "${{ needs.newman-tests.result }}" == "success" && \
+                "${{ needs.lint.result }}" == "success" && \
+                "${{ needs.security.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+          fi
+      
+      # Vérifier si Slack webhook existe
+      - name: 🔍 Check Slack webhook
+        id: check_slack
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            echo "has_slack=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_slack=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # Slack notification (exécutée seulement si webhook existe)
+      - name: 💬 Slack Notification
+        if: steps.check_slack.outputs.has_slack == 'true'
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "Todo API Tests: ${{ steps.status.outputs.status }}\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nURL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+      
+      # Afficher le résumé
+      - name: 📋 Summary
+        run: |
+          echo "## Résumé des tests - Todo API" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Newman Tests | ${{ needs.newman-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📁 **Rapports téléchargeables dans les artefacts**" >> $GITHUB_STEP_SUMMARY
+
+# ============================================
+# FIN DU WORKFLOW
+# ============================================
