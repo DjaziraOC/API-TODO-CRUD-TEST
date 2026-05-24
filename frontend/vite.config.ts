@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     port: Number(process.env.VITE_PORT ?? process.env.PORT),
     strictPort: false
-  }
+  },
+  base: '/API-TODO-CRUD-TEST/'
 });
 
 
