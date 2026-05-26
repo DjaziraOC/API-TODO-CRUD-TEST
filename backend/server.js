@@ -19,9 +19,7 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGODB_URI  || 'mongodb://localhost:27017/todo_app';
 
 // Configuration CORS - Contrôle des origines autorisées
-// Lit les origines depuis .env et les transforme en tableau
-const allowedOrigins = 
-     ['http://localhost:3000','http://localhost:5173']; // Valeurs par défaut  
+let allowedOrigins = ['http://localhost:3000', 'http://localhost:5173']; // Valeurs par défaut
 
 if (process.env.CORS_ORIGINS) {
   allowedOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
@@ -33,24 +31,23 @@ if (process.env.CORS_ORIGINS) {
 console.log('🔒 Origines CORS autorisées:', allowedOrigins);
 
 const corsOptions = {
-   origin: function (origin, callback) {
+  origin: function (origin, callback) {
     // Permet les requêtes sans origin (ex: appels serveur-à-serveur, outils CLI)
-      if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true);
     
     // Vérifie si l'origine est dans la liste autorisée
-      if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
-      } else {
+    } else {
       console.warn(`❌ CORS: Origine refusée - ${origin}`);
       callback(new Error(`Origin ${origin} non autorisée par CORS`));
-      }
+    }
   },
-  credentials: true, // Autorise les cookies / headers d'authentification
+  credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Méthodes HTTP autorisées
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] // Headers autorisés
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
-
 
 // Configuration du rate limiting - Protection contre les attaques par force brute
 const limiter = rateLimit({
