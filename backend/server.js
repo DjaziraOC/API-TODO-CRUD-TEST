@@ -12,27 +12,59 @@ const taskRoutes = require('./routes/taskRoutes'); // Routes de gestion des tâc
 
 // Initialisation de l'application Express
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy
 // Configuration du port avec fallback sur 5000 si non défini
 const PORT = process.env.PORT || 5000;
 // URI MongoDB avec valeur par défaut pour le développement local
 const MONGO_URI = process.env.MONGODB_URI  || 'mongodb://localhost:27017/todo_app';
 
 // Configuration CORS - Contrôle des origines autorisées
+// Lit les origines depuis .env et les transforme en tableau
+const allowedOrigins = 
+     ['http://localhost:3000','http://localhost:5173']; // Valeurs par défaut  
+
+if (process.env.CORS_ORIGINS) {
+  allowedOrigins = process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
+  console.log('🔒 CORS depuis variable d\'environnement:', allowedOrigins);
+} else {
+  console.log('🔒 CORS avec valeurs par défaut:', allowedOrigins);
+}
+
+console.log('🔒 Origines CORS autorisées:', allowedOrigins);
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // Origine frontend
-  credentials: true, // Autorise l'envoi de cookies/credentials
-  optionsSuccessStatus: 200 // Statut pour les requêtes OPTIONS preflight
+   origin: function (origin, callback) {
+    // Permet les requêtes sans origin (ex: appels serveur-à-serveur, outils CLI)
+      if (!origin) return callback(null, true);
+    
+    // Vérifie si l'origine est dans la liste autorisée
+      if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      } else {
+      console.warn(`❌ CORS: Origine refusée - ${origin}`);
+      callback(new Error(`Origin ${origin} non autorisée par CORS`));
+      }
+  },
+  credentials: true, // Autorise les cookies / headers d'authentification
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Méthodes HTTP autorisées
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] // Headers autorisés
 };
+
 
 // Configuration du rate limiting - Protection contre les attaques par force brute
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // Fenêtre de 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // 100 requêtes max par fenêtre
-  message: 'Trop de requêtes depuis cette IP, veuillez réessayer plus tard.' // Message personnalisé
+  message: 'Trop de requêtes depuis cette IP, veuillez réessayer plus tard.', // Message personnalisé
+  skipSuccessfulRequests: true,// Ne compte pas les requêtes réussies (optionnel)
 });
 
 // Middleware - Exécutés dans l'ordre pour chaque requête
-app.use(helmet()); // Sécurise les headers HTTP
+
+app.use(helmet({ // Sécurise les headers HTTP
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Permet le partage de ressources
+}));
 app.use(cors(corsOptions)); // Applique la politique CORS
 app.use(express.json()); // Parse le corps des requêtes en JSON
 app.use(express.urlencoded({ extended: true })); // Parse les données de formulaire
@@ -116,6 +148,7 @@ app.get('/api-docs', (req, res) => {
 
 //Gestionnaire d'erreurs global - Intercepte toutes les erreurs non gérées
 app.use((err, req, res, next) => {
+  
   console.error('Erreur:', err.stack); // Log complet de l'erreur
   
   const statusCode = err.statusCode || 500; // Code statut HTTP (500 par défaut)
