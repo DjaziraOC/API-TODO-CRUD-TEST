@@ -15,7 +15,7 @@ const API_URL =
   // fallback local
   'http://localhost:5000';
 
-
+console.log('API_URL:', API_URL); 
 
 // Wrapper générique autour de fetch pour centraliser :
 // - sérialisation JSON
